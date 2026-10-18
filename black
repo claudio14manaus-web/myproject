@@ -1,0 +1,42 @@
+name: Build BLACK.exe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    env:
+      CI: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify game assets
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "assets/default.xbe")) {
+            throw "Missing assets/default.xbe. Add the game files from a legally acquired copy before running the build."
+          }
+          if (-not (Test-Path "assets/GlobData.bin")) {
+            throw "Missing assets/GlobData.bin. The game files must be placed in the assets folder."
+          }
+
+      - name: Build with project script
+        shell: cmd
+        run: build.bat
+
+      - name: Package release ZIP
+        shell: cmd
+        run: release.bat
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BLACK-XBERecomp
+          path: |
+            out\build\release\BLACK.exe
+            BLACK-XBERecomp.zip
